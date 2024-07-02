@@ -43,7 +43,6 @@ public class Client {
 		new ListenFromServer().start();
 
 		try {
-			System.out.println("사용자 이름 전달");
 			// 첫 연결 시 사용자 이름 전달
 			sOutput.writeObject(username);
 		} catch (IOException eIO) {
