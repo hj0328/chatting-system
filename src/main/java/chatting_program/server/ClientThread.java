@@ -86,7 +86,6 @@ public class ClientThread extends Thread {
                 broadcast(chatMessage.getMessage());
             }
         }
-        // if out of the loop then disconnected and remove from client list
         remove();
         close();
     }
@@ -99,7 +98,7 @@ public class ClientThread extends Thread {
     }
 
     // 모든 client 에 메시지 전달
-    public synchronized void broadcast(String message) {
+    public void broadcast(String message) {
         String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
 
         String newMessage = time + " " + this.username + " " + message;
@@ -132,7 +131,6 @@ public class ClientThread extends Thread {
         return found;
     }
 
-    // close everything
     private void close() {
         try {
             if (sOutput != null) sOutput.close();
@@ -142,7 +140,6 @@ public class ClientThread extends Thread {
         }
     }
 
-    // write a String to the Client output stream
     boolean writeMsg(String msg) {
         if (!socket.isConnected()) {
             close();
