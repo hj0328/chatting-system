@@ -1,12 +1,16 @@
 # 1:N Socket Chatting Program
 
-스레드 활용 소켓 채팅 프로그램 
+스레드 활용 소켓 채팅 프로그램  
+
+## 목표
+- 한 쌍의 socket으로 unique한 connection 생성의 이해
+- 서버 프로세스에서 client 수 만큼 스레드를 생성하여 connection 생성 및 관리
 
 ## 기능
-- 1:1 채팅 
-- 1:N 채팅 
-- 현재 서버에 접속 중인 client 확인
-- 로그아웃 
+- Client 1:1 채팅 
+- Client 1:N 채팅 
+- Client 로그아웃
+- Server에 현재 접속 중인 Client 확인
 
 ## 구조 
 ### server, client 연결 
