@@ -1,6 +1,6 @@
 package chatting_program.server;
 
-import chatting_program.ChatMessage;
+import chatting_program.ChatMessageDto;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,21 +10,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 // client 요청 당 ClientThread 인스턴스 하나 생성하여 connection 맺는다.
-public class ClientThread extends Thread {
+public class ClientEntity extends Thread {
     private Socket socket;
 
     private ObjectInputStream sInput;
     private ObjectOutputStream sOutput;
     private String username;
-    private ChatMessage chatMessage;
+    private int sessionId;
+    private ChatMessageDto chatMessage;
     private String timestamp;
     private String notif = " *** ";
+    private Server server;
 
-    ClientThread(Socket socket) {
+    ClientEntity(Socket socket, int clientSessionId, Server server) {
         this.socket = socket;
+        this.sessionId = clientSessionId;
+        this.server = server;
 
         //Creating both Data Stream
-        display("Thread trying to create Object Input/Output Streams");
+        display("ClientSession trying to create Object Input/Output Streams");
         try {
             sOutput = new ObjectOutputStream(socket.getOutputStream());
             sInput = new ObjectInputStream(socket.getInputStream());
@@ -46,11 +50,15 @@ public class ClientThread extends Thread {
         return timestamp;
     }
 
+    public int getSessionId() {
+        return sessionId;
+    }
+
     public void run() {
         boolean keepListening = true;
         while (keepListening) {
             try {
-                chatMessage = (ChatMessage) sInput.readObject();
+                chatMessage = (ChatMessageDto) sInput.readObject();
             } catch (IOException e) {
                 display(username + " Exception reading Streams: " + e);
                 break;
@@ -60,51 +68,55 @@ public class ClientThread extends Thread {
             }
 
             int type = chatMessage.getType();
-            if (type == ChatMessage.MESSAGE) {
-                String[] split = chatMessage.getMessage().split(" ");
-                String receiveClient = split[0].split("@")[1];
-                String message = split[1];
+            if (type == ChatMessageDto.MESSAGE) {
+                String receiveClient = chatMessage.getTo();
+                String message = chatMessage.getMessage();
 
                 boolean isSent = forwardPersonalMessage(message, receiveClient);
-                if (!isSent) {
+                if (isSent) {
+                    display("귓속말 From: " + this.username + ", To: " + chatMessage.getTo() + ", msg:" + chatMessage.getMessage());
+                } else {
                     writeMsg(notif + "Sorry. No such user exists." + notif);
                 }
-            } else if (type == ChatMessage.LOGOUT) {
+            } else if (type == ChatMessageDto.LOGOUT) {
                 display(username + " disconnected with a LOGOUT message.");
                 keepListening = false;
-            } else if (type == ChatMessage.WHOISIN) {
+            } else if (type == ChatMessageDto.WHOISIN) {
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
                 writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()));
 
                 int number = 1;
-                for (ClientThread clientThread : Server.clientThreads) {
+                for (ClientEntity clientThread : Server.clientThreads) {
                     writeMsg(number++ + ") " + clientThread.getUsername() + " since " + clientThread.getTimestamp());
                 }
             } else {
-                // broadcast
-                display("broadcast worked by " + this.username);
-                broadcast(chatMessage.getMessage());
+                display("broadcast worked by " + this.username + ", msg: " + chatMessage.getMessage());
+
+                ChatMessageDto broadcastMsg = new ChatMessageDto(ChatMessageDto.BROADCAST, chatMessage.getMessage(), this.username, null);
+                server.enqueueBroadcast(broadcastMsg);
+//                broadcast(chatMessage.getMessage());
             }
         }
         remove();
         close();
     }
 
-    private synchronized void remove() {
+    private void remove() {
         String disconnectedClient = this.username;
         Server.clientThreads.remove(this);
-
         broadcast(notif + disconnectedClient + " has left the chat room." + notif);
     }
 
     // 모든 client 에 메시지 전달
     public void broadcast(String message) {
         String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
-
         String newMessage = time + " " + this.username + " " + message;
-        display(newMessage);
 
-        for(ClientThread clientThread : Server.clientThreads) {
+        for (ClientEntity clientThread : Server.clientThreads) {
+            if (clientThread.getSessionId() == this.sessionId) {
+                continue;
+            }
+
             boolean isMessageSent = clientThread.writeMsg(newMessage);
             if (!isMessageSent) {
                 display("Disconnected Client " + clientThread.getUsername() + " removed from list.");
@@ -113,9 +125,8 @@ public class ClientThread extends Thread {
     }
 
     private boolean forwardPersonalMessage(String message, String receiver) {
-
         boolean found = false;
-        for (ClientThread clientThread : Server.clientThreads) {
+        for (ClientEntity clientThread : Server.clientThreads) {
             if (!clientThread.getUsername().equals(receiver)) {
                 continue;
             }
@@ -156,6 +167,6 @@ public class ClientThread extends Thread {
     }
 
     private void display(String msg) {
-        System.out.println(msg + "\n");
+        System.out.println("[Server] " + msg + "\n");
     }
 }

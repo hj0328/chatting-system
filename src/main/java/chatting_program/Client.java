@@ -12,7 +12,7 @@ public class Client {
 	private String serverAddress;
 	private String username;
 	private int serverPort;
-	private static int id;
+	private int id;	// 서버에서 전달하는 id 값
 
 	Client(String serverAddress, int serverPort, String username) {
 		this.serverAddress = serverAddress;
@@ -20,7 +20,8 @@ public class Client {
 		this.username = username;
 	}
 
-	private boolean makeConnection() {
+	// 서버 연결을 시도하고, 스트림 생성 및 사용자 이름 전송
+	public boolean makeConnection() {
 		try {
 			// stream 소켓 생성 후 connect 시도 -> 3 way handshake 발생
 			socket = new Socket(serverAddress, serverPort);
@@ -31,27 +32,36 @@ public class Client {
 		}
 
 		try {
-			// 양방향 통신 준비
-			sInput = new ObjectInputStream(socket.getInputStream());
+			// 양방향 통신을 위한 Object 스트림 생성
 			sOutput = new ObjectOutputStream(socket.getOutputStream());
+			sInput = new ObjectInputStream(socket.getInputStream());
 		} catch (IOException eIO) {
 			display("Exception creating new Input/output Streams: " + eIO);
 			return false;
 		}
 
-		// 서버 메시지 대기
-		new ListenFromServer().start();
-
 		try {
-			// 첫 연결 시 사용자 이름 전달
+			// 첫 연결 시 사용자 이름을 서버에 전달
 			sOutput.writeObject(username);
+
+			// 서버는 첫 연결 시 사용자 id를 Client에 전달
+			String msg = (String) sInput.readObject();
+			if (msg.startsWith("id:")) {
+				id = Integer.valueOf(msg.split(" ")[1]);
+			}
+			display("My Id="+id);
 		} catch (IOException eIO) {
 			display("Exception doing login : " + eIO);
 			disconnect();
 			return false;
+		} catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
 		}
-		// success we inform the caller that it worked
-		return true;
+
+		// 서버 메시지듣기 위한 스레드 시작
+		new ListenFromServer().start();
+
+        return true;
 	}
 
 	private void display(String msg) {
@@ -60,7 +70,7 @@ public class Client {
 
 	}
 
-	private void sendMessage(ChatMessage msg) {
+	public void sendMessage(ChatMessageDto msg) {
 		try {
 			sOutput.writeObject(msg);
 		} catch (IOException e) {
@@ -68,7 +78,7 @@ public class Client {
 		}
 	}
 
-	private void disconnect() {
+	public void disconnect() {
 		try {
 			if (sInput != null) sInput.close();
 			if (sOutput != null) sOutput.close();
@@ -80,17 +90,16 @@ public class Client {
 	}
 
 	public void start() {
-		// socket connection 생성
 		if (!makeConnection())
 			return;
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Welcome to the chatroom.")
-				.append("Instructions: \n")
-				.append("1. Simply type the message to send broadcast to all active clients\n")
-				.append("2. Type '@username message' without quotes to send message to desired client\n")
-				.append("3. Type 'WHOISIN' without quotes to see list of active clients\n")
-				.append("4. Type 'LOGOUT' without quotes to logoff from server\n\n");
+				.append("설명서: \n")
+				.append("1. 활성화된 모든 클라이언트에게 브로드캐스트 메시지를 보내려면, 메시지를 입력하세요.\n")
+				.append("2. 원하는 클라이언트에게 귓속말를 보내려면 @username 메시지 형식으로 입력하세요.\n")
+				.append("3. 활성화된 클라이언트 목록을 보려면 따옴표 없이 WHOISIN을 입력하세요.\n")
+				.append("4. LOGOUT을 입력하면 서버에서 로그아웃됩니다.\n\n");
 		System.out.println(sb);
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -101,14 +110,16 @@ public class Client {
 			try {
 				String msg = br.readLine();
 				if (msg.equalsIgnoreCase("LOGOUT")) {
-					sendMessage(new ChatMessage(ChatMessage.LOGOUT, ""));
+					sendMessage(new ChatMessageDto(ChatMessageDto.LOGOUT, null, null, null));
 					break;
 				} else if (msg.equalsIgnoreCase("WHOISIN")) {
-					sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
+					sendMessage(new ChatMessageDto(ChatMessageDto.WHOISIN, null, null, null));
 				} else if (msg.startsWith("@")) {
-					sendMessage(new ChatMessage(ChatMessage.MESSAGE, msg));
+					String to = msg.split("@")[0].split(" ")[0];
+					String toMsg = msg.split(to)[1];
+					sendMessage(new ChatMessageDto(ChatMessageDto.MESSAGE, toMsg, this.username, to));
 				} else {
-					sendMessage(new ChatMessage(ChatMessage.BROADCAST, msg));
+					sendMessage(new ChatMessageDto(ChatMessageDto.BROADCAST, msg, this.username, null));
 				}
 			} catch (IOException e) {
 				System.out.println("Invalid value");
@@ -124,20 +135,19 @@ public class Client {
 		}
 	}
 
+	public int getId() {
+		return this.id;
+	}
+
 	/*
 	 * 서버 메시지 대기 스레드
 	 */
 	class ListenFromServer extends Thread {
-
 		public void run() {
 			while (true) {
 				try {
 					// server msg 올때까지 block
 					String msg = (String) sInput.readObject();
-					if (msg.startsWith("id:")) {
-						Client.id = Integer.valueOf(msg.split(" ")[1]);
-					}
-
 					System.out.println(msg);
 					System.out.print("> ");
 				} catch (IOException e) {
