@@ -52,7 +52,7 @@ public class ChatIntegrationTest {
             clientA.makeConnection();
             String testMessage = "Hello Client B!\n";
             clientA.sendMessage(new ChatMessageDto(ChatMessageDto.BROADCAST, testMessage, "clientA", ""));
-            clientA.disconnect();
+//            clientA.disconnect();
         });
         thread.start();
 
@@ -62,7 +62,7 @@ public class ChatIntegrationTest {
             clientB.makeConnection();
             String testMessage = "Hello Client A!\n";
             clientB.sendMessage(new ChatMessageDto(ChatMessageDto.BROADCAST, testMessage, "clientB", ""));
-            clientB.disconnect();
+//            clientB.disconnect();
         });
         thread2.start();
 

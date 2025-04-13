@@ -151,7 +151,7 @@ public class ClientEntity extends Thread {
         }
     }
 
-    boolean writeMsg(String msg) {
+    public boolean writeMsg(String msg) {
         if (!socket.isConnected()) {
             close();
             return false;

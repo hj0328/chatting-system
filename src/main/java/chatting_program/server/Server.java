@@ -82,9 +82,11 @@ public class Server {
 					// 메시지 형식 (발신자 정보 포함)
 					String message = msg.getFrom() + ": " + msg.getMessage();
 					display(message);
+
 					// 모든 클라이언트에게 메시지 전송 (자신을 제외할 필요가 있으면 추가 조건 처리)
+					// 각 클라이언트에 대해 전송 작업을 스레드 풀에 할당
 					for (ClientEntity client : clientThreads) {
-						client.writeMsg(message);
+						threadPool.execute(() -> client.writeMsg(message));
 					}
 				} catch (InterruptedException ex) {
 					Thread.currentThread().interrupt();
