@@ -1,26 +1,36 @@
-# 1:N Socket Chatting Program
+# 프로젝트명: 멀티스레드 채팅 프로그램
 
-스레드 활용 소켓 채팅 프로그램  
+## 프로젝트 개요  
+### 목표
+  - Java로 클라이언트-서버 기반의 채팅 시스템을 구현
+  - 실시간 메시지 송수신 및 귓속말, 접속자 목록 확인 등의 기능을 제공함으로써 네트워킹, 소켓 프로그래밍, 동시성 제어, 객체 직렬화를 학습 및 적용
+  
 
-## 목표
-- 한 쌍의 socket으로 unique한 connection 생성의 이해
-- 서버 프로세스에서 client 수 만큼 스레드를 생성하여 connection 생성 및 관리
+### 주요 기능
+  - 클라이언트와 서버 간 TCP 소켓을 이용한 양방향 통신
+  - 멀티스레딩을 통한 동시 접속 처리
+  - 메시지 타입에 따른 브로드캐스트, 귓속말(@username), WHOISIN, LOGOUT 명령 지원
+  - 서버 로그를 통한 접속/해제 기록 관리 및 사용자 활동 모니터링
+  - ExecutorService를 활용한 스레드 풀 도입으로 자원 관리 최적화 및 성능 개선
 
-## 기능
-- Client 1:1 채팅 
-- Client 1:N 채팅 
-- Client 로그아웃
-- Server에 현재 접속 중인 Client 확인
+### 사용 기술
+- 언어: Java
+- 네트워킹: Socket 프로그래밍 (TCP/IP)
+- 동시성 처리: 멀티스레딩, ExecutorService, BlockingQueue, ConcurrentLinkedQueue
 
-## 구조 
-### server, client 연결 
-<img width="80%" alt="client server 연결" src="https://github.com/user-attachments/assets/e7af32f2-cc6f-4eed-b1b2-a584a610e528">
+- 빌드 도구: Maven
 
-### client 1:1 통신 
-<img width="80%" alt="client 1:1 통신" src="https://github.com/user-attachments/assets/3dfa200e-f80a-456f-93b8-5e2e120a3392">
+- 테스트: JUnit 5
 
-### client 1:N 통신
-<img width="80%" alt="client 1:N 통신" src="https://github.com/user-attachments/assets/2a37104e-d8c6-405e-88e9-b14e1b8bc7a6">
+### 주요 성과 및 학습 내용  
+- 서버와 클라이언트 간 통신 및 메시지 프로토콜(ChatMessageDto) 설계 및 구현
+
+- 멀티스레드를 활용하여 클라이언트 연결을 효율적으로 관리하고, 스레드 풀을 통해 자원 최적화를 달성
+
+- 비동기 메시지 큐를 도입해 브로드캐스트 메시지 전송의 병목 현상을 완화함
+
+- 통합 테스트를 통해 실제 운영 환경에서의 기능 및 안정성을 검증
+
 
 ## 실행
 1. 2개 이상의 terminal 실행
@@ -54,10 +64,10 @@ tester
 Connection accepted localhost/127.0.0.1:7000
 
 Welcome to the chatroom.Instructions:
-1. Simply type the message to send broadcast to all active clients
-2. Type '@username message' without quotes to send message to desired client
-3. Type 'WHOISIN' without quotes to see list of active clients
-4. Type 'LOGOUT' without quotes to logoff from server
+1. 활성화된 모든 클라이언트에게 브로드캐스트 메시지를 보내려면, 메시지를 입력하세요.
+2. 원하는 클라이언트에게 귓속말를 보내려면 @username 메시지 형식으로 입력하세요.
+3. 활성화된 클라이언트 목록을 보려면 따옴표 없이 WHOISIN을 입력하세요.
+4. LOGOUT을 입력하면 서버에서 로그아웃됩니다.
 
 
 > id: 0
