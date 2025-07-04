@@ -1,34 +1,27 @@
 plugins {
-    id("org.springframework.boot") version "3.2.0"
+    id("org.springframework.boot") version "3.2.0" apply false
     id("io.spring.dependency-management") version "1.1.4"
     java
 }
 
 group = "chatting_system"
 version = "1.0-SNAPSHOT"
-description = "chatting_system"
-java.sourceCompatibility = JavaVersion.VERSION_17
 
-repositories {
-    mavenCentral()
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
-configurations {
-    compileOnly.get().extendsFrom(configurations.annotationProcessor.get())
-}
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "org.springframework.boot")
+    apply(plugin = "io.spring.dependency-management")
 
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-websocket")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
+    repositories {
+        mavenCentral()
+    }
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<Javadoc> {
-    options.encoding = "UTF-8"
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
 }
