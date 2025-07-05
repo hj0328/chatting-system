@@ -1,0 +1,47 @@
+services:
+  chatting-api:
+    build:
+      context: ./chatting-api
+    ports:
+      - "8090:8090"   # 내부포트와 외부포트 모두 8090
+    depends_on:
+      - db
+      - redis
+      - chatting-core
+    networks:
+      - chatting-network
+
+  chatting-core:
+    build:
+      context: ./chatting-core
+    ports:
+      - "8091:8091"   # 내부포트와 외부포트 모두 8091
+    depends_on:
+      - redis
+    networks:
+      - chatting-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - chatting-network
+
+  db:
+    image: mysql:8
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: chatdb
+      MYSQL_USER: chatuser
+      MYSQL_PASSWORD: chatpassword
+    ports:
+      - "3306:3306"
+    networks:
+      - chatting-network
+
+networks:
+  chatting-network:
+    driver: bridge
