@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>채팅 시스템</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            text-align: center;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            height: 200px;
+            overflow-y: scroll;
+        }
+        #inputArea {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>채팅 시스템</h2>
+
+<div id="inputArea">
+    <input type="text" id="messageInput" placeholder="메시지를 입력하세요" />
+    <select id="typeSelect">
+        <option value="ROOM">방</option>
+        <option value="DIRECT">DM</option>
+    </select>
+    <button id="sendButton">전송</button>
+</div>
+
+<div id="messages"></div>
+
+<script>
+    const socket = new SockJS('http://localhost:8091/ws-chat');
+    const stompClient = Stomp.over(socket);
+
+    // 예시 sender, receiver, roomId
+    const sender = 'user1';
+    const roomId = 'room1';
+    const receiver = 'user2';
+
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+
+        // 방 구독
+        stompClient.subscribe('/topic/' + roomId, function (message) {
+            const receivedMessage = JSON.parse(message.body);
+            displayMessage('[방]', receivedMessage.sender, receivedMessage.content);
+        });
+
+        // 개인 메시지 구독
+        stompClient.subscribe('/user/' + sender + '/queue/messages', function (message) {
+            const receivedMessage = JSON.parse(message.body);
+            displayMessage('[DM]', receivedMessage.sender, receivedMessage.content);
+        });
+
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }, function (error) {
+        console.error('Connection error:', error);
+    });
+
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const content = input.value.trim();
+        const type = document.getElementById('typeSelect').value;
+
+        if (content !== '') {
+            const message = {
+                messageType: type,
+                roomId: roomId,
+                sender: sender,
+                receiver: receiver,
+                content: content
+            };
+
+            // Controller endpoint를 messageType에 따라 분기
+            if (type === "ROOM") {
+                stompClient.send("/app/chat.sendRoomMessage", {}, JSON.stringify(message));
+            } else if (type === "DIRECT") {
+                stompClient.send("/app/chat.sendDirectMessage", {}, JSON.stringify(message));
+            }
+
+            input.value = '';
+        }
+    }
+
+
+    function displayMessage(prefix, sender, message) {
+        const messagesDiv = document.getElementById('messages');
+        const messageElement = document.createElement('div');
+        messageElement.textContent = prefix + ' ' + sender + ": " + message;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    window.addEventListener('beforeunload', function () {
+        if (stompClient) {
+            stompClient.disconnect();
+        }
+    });
+</script>
+
+</body>
+</html>
