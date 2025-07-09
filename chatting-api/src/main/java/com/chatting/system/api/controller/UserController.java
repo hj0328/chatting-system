@@ -4,20 +4,19 @@ import com.chatting.system.api.dto.LoginRequest;
 import com.chatting.system.api.dto.SignupRequest;
 import com.chatting.system.api.dto.UserResponse;
 import com.chatting.system.api.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
+import com.chatting.system.api.util.JwtUtil;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -29,9 +28,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public UserResponse login(@RequestBody LoginRequest request, HttpSession session) {
+    public UserResponse login(@RequestBody LoginRequest request) {
         UserResponse user = userService.login(request.getUsername(), request.getPassword());
-        session.setAttribute("userId", user.getId());
         return user;
     }
 

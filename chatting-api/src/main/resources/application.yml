@@ -19,3 +19,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+jwt:
+  secret: mySecretKey
+  expiration: 1800000 # 30분 (ms 단위)

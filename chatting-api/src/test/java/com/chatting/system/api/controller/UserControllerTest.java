@@ -37,7 +37,7 @@ class UserControllerTest {
 
         // when
         Mockito.when(userService.signup(anyString(), anyString()))
-                .thenReturn(new UserResponse(1L, "testuser"));
+                .thenReturn(new UserResponse(1L, "testuser", "token"));
 
         // then
         mockMvc.perform(post("/api/signup")
@@ -67,7 +67,7 @@ class UserControllerTest {
         LoginRequest request = new LoginRequest("testuser", "password");
 
         Mockito.when(userService.login(anyString(), anyString()))
-                .thenReturn(new UserResponse(1L, "testuser"));
+                .thenReturn(new UserResponse(1L, "testuser", "token"));
 
         mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)

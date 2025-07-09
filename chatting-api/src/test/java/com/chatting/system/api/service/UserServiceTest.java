@@ -4,6 +4,7 @@ package com.chatting.system.api.service;
 import com.chatting.system.api.dto.UserResponse;
 import com.chatting.system.api.entity.User;
 import com.chatting.system.api.repository.UserRepository;
+import com.chatting.system.api.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,7 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,12 +26,16 @@ class UserServiceTest {
     @Mock
     BCryptPasswordEncoder passwordEncoder;
 
+    @Mock
+    JwtUtil jwtUtil;
+
     @InjectMocks
     UserService userService;
 
     @Test
     void signupSuccess() {
         when(userRepository.findByUsername("testuser")).thenReturn(null);
+        when(jwtUtil.generateToken(any(), any())).thenReturn(anyString());
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class)))
                 .thenReturn(User.sign("testuser", "encodedPassword"));
@@ -53,6 +58,7 @@ class UserServiceTest {
     void loginSuccess() {
         User user = User.sign("testuser", "encodedPassword");
 
+        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
         when(userRepository.findByUsername("testuser")).thenReturn(user);
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 
