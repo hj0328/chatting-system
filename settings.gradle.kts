@@ -3,4 +3,4 @@
  */
 
 rootProject.name = "chatting-system"
-include("chatting-core", "chatting-api")
+include("chatting-core", "chatting-api", "common")

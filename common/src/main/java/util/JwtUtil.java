@@ -1,4 +1,4 @@
-package com.chatting.system.api.util;
+package util;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

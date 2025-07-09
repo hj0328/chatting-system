@@ -3,11 +3,11 @@ package com.chatting.system.api.service;
 import com.chatting.system.api.dto.UserResponse;
 import com.chatting.system.api.entity.User;
 import com.chatting.system.api.repository.UserRepository;
-import com.chatting.system.api.util.JwtUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import util.JwtUtil;
 
 @Service
 @AllArgsConstructor

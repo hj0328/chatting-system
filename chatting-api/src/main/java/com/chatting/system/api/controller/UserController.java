@@ -4,12 +4,10 @@ import com.chatting.system.api.dto.LoginRequest;
 import com.chatting.system.api.dto.SignupRequest;
 import com.chatting.system.api.dto.UserResponse;
 import com.chatting.system.api.service.UserService;
-import com.chatting.system.api.util.JwtUtil;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
