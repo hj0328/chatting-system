@@ -9,3 +9,6 @@ spring:
   redis:
     host: redis
     port: 6379
+
+  config:
+    import: classpath:common.yml

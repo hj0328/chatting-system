@@ -5,11 +5,11 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class UserResponse {
+public class SignupResponse {
     private Long id;
     private String username;
 
-    public static UserResponse toUserResponse(Long id, String username) {
-        return new UserResponse(id, username);
+    public static SignupResponse toUserResponse(Long id, String username) {
+        return new SignupResponse(id, username);
     }
 }

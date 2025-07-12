@@ -8,6 +8,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -16,8 +18,8 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat.sendRoomMessage")
-    public ChatMessageDto sendRoomMessage(ChatMessageDto messageDto) {  // stomp의 payload(json)을 파라미터로 매핑
-        log.info("Room Message:{}", messageDto);
+    public ChatMessageDto sendRoomMessage(ChatMessageDto messageDto, Principal principal) {  // stomp의 payload(json)을 파라미터로 매핑
+        log.info("Room Message:{} from user:{}", messageDto, principal.getName());
 
         if (messageDto.getMessageType() == MessageType.ROOM) {
             // Room 기록
@@ -28,19 +30,13 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.sendDirectMessage")
-    public ChatMessageDto sendDirectMessage(ChatMessageDto messageDto) {
-        log.info("Direct Message:{}", messageDto);
+    public ChatMessageDto sendDirectMessage(ChatMessageDto messageDto, Principal principal) {
+        log.info("Direct Message:{} from user:{}", messageDto, principal.getName());
 
         if (messageDto.getMessageType() == MessageType.DIRECT) {
             // receiver 기록
             messagingTemplate.convertAndSend(
                     "/user/" + messageDto.getReceiver() + "/queue/messages",
-                    messageDto
-            );
-
-            // sender 기록?
-            messagingTemplate.convertAndSend(
-                    "/user/" + messageDto.getSender() + "/queue/messages",
                     messageDto
             );
         }

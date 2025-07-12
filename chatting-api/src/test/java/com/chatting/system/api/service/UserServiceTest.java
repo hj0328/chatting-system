@@ -1,7 +1,8 @@
 package com.chatting.system.api.service;
 
 
-import com.chatting.system.api.dto.UserResponse;
+import com.chatting.system.api.dto.LoginResponse;
+import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.entity.User;
 import com.chatting.system.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -10,10 +11,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.common.JwtUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,6 +28,9 @@ class UserServiceTest {
     @Mock
     BCryptPasswordEncoder passwordEncoder;
 
+    @Mock
+    JwtUtil jwtUtil;
+
     @InjectMocks
     UserService userService;
 
@@ -35,7 +41,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class)))
                 .thenReturn(User.sign("testuser", "encodedPassword"));
 
-        UserResponse response = userService.signup("testuser", "password");
+        SignupResponse response = userService.signup("testuser", "password");
 
         assertThat(response.getUsername()).isEqualTo("testuser");
     }
@@ -53,10 +59,11 @@ class UserServiceTest {
     void loginSuccess() {
         User user = User.sign("testuser", "encodedPassword");
 
+        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
         when(userRepository.findByUsername("testuser")).thenReturn(user);
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 
-        UserResponse response = userService.login("testuser", "password");
+        LoginResponse response = userService.login("testuser", "password");
 
         assertThat(response.getUsername()).isEqualTo("testuser");
     }

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>채팅 시스템 통합</title>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+        }
+        #topMenu {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+        #chatSection {
+          display: none;
+        }
+        #messages {
+          border: 1px solid #ccc;
+          padding: 10px;
+          margin-top: 10px;
+          height: 200px;
+          overflow-y: scroll;
+        }
+        #inputArea {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        #messageInput {
+          flex: 1;
+          padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="topMenu">
+    <button id="showSignupBtn">회원가입</button>
+    <button id="showLoginBtn">로그인</button>
+    <button id="logoutBtn" style="display:none;">로그아웃</button>
+</div>
+
+<!-- 회원가입 폼 -->
+<div id="signupSection" style="display:none;">
+    <h2>회원가입</h2>
+    <form id="signupForm">
+        <input type="text" id="signupUsername" placeholder="Username" required>
+        <input type="password" id="signupPassword" placeholder="Password" required>
+        <button type="submit">회원가입</button>
+    </form>
+</div>
+
+<!-- 로그인 폼 -->
+<div id="loginSection" style="display:none;">
+    <h2>로그인</h2>
+    <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">로그인</button>
+    </form>
+</div>
+
+<!-- 채팅 섹션 -->
+<div id="chatSection">
+    <h2>채팅 시스템</h2>
+
+    <div id="chatConfig">
+        <input type="text" id="receiverInput" placeholder="1:1 채팅 대상 Username">
+        <input type="text" id="roomInput" placeholder="방 ID">
+        <button id="joinRoomBtn">방 입장</button>
+    </div>
+
+    <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="메시지를 입력하세요" />
+        <select id="typeSelect">
+            <option value="ROOM">방</option>
+            <option value="DIRECT">DM</option>
+        </select>
+        <button id="sendButton">전송</button>
+    </div>
+
+    <div id="messages"></div>
+</div>
+
+<script>
+    let stompClient = null;
+    let currentUser = null;
+    let authToken = null;
+    let subscribedRooms = new Set();
+
+    const showSignupBtn = document.getElementById('showSignupBtn');
+    const showLoginBtn = document.getElementById('showLoginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const signupSection = document.getElementById('signupSection');
+    const loginSection = document.getElementById('loginSection');
+    const chatSection = document.getElementById('chatSection');
+
+    // 회원가입, 로그인 버튼 클릭 이벤트
+    showSignupBtn.addEventListener('click', () => {
+      signupSection.style.display = 'block';
+      loginSection.style.display = 'none';
+    });
+
+    showLoginBtn.addEventListener('click', () => {
+      loginSection.style.display = 'block';
+      signupSection.style.display = 'none';
+    });
+
+    // 회원가입 submit
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('signupUsername').value;
+      const password = document.getElementById('signupPassword').value;
+
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const text = await response.text();
+      alert(text);
+    });
+
+    // 로그인 submit
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json(); // token을 JSON으로 받음
+      if (response.ok) {
+        currentUser = username;
+        authToken = data.token; // token 저장
+        localStorage.setItem('authToken', authToken); // 필요 시 localStorage에도 저장
+
+        showLoginSuccessUI();
+        connectStomp();
+      } else {
+        alert(data.message || '로그인 실패');
+      }
+    });
+
+    // 로그아웃
+    logoutBtn.addEventListener('click', async () => {
+      const response = await fetch('/api/logout', { method: 'POST' });
+      const text = await response.text();
+      alert(text);
+      location.reload();
+    });
+
+    function showLoginSuccessUI() {
+      showSignupBtn.style.display = 'none';
+      showLoginBtn.style.display = 'none';
+      logoutBtn.style.display = 'block';
+      signupSection.style.display = 'none';
+      loginSection.style.display = 'none';
+      chatSection.style.display = 'block';
+    }
+
+    // stomp 연결
+    function connectStomp() {
+      const socket = new SockJS('http://localhost:8091/ws-chat');
+      stompClient = Stomp.over(socket);
+
+      stompClient.connect(
+        { Authorization: 'Bearer ' + authToken }, // connect headers에 token 추가
+        function (frame) {
+          console.log('Connected: ' + frame);
+
+          stompClient.subscribe('/user/' + currentUser + '/queue/messages', function (message) {
+            const receivedMessage = JSON.parse(message.body);
+            displayMessage('[DM]', receivedMessage.sender, receivedMessage.content);
+          });
+
+        }, function (error) {
+          console.error('Connection error:', error);
+        });
+    }
+
+
+    // 방 입장
+    document.getElementById('joinRoomBtn').addEventListener('click', () => {
+      const roomId = document.getElementById('roomInput').value.trim();
+
+      if (!roomId) {
+        alert("방 ID를 입력하세요");
+        return;
+      }
+
+      if (subscribedRooms.has(roomId)) {
+        alert("이미 구독된 방입니다.");
+        return;
+      }
+
+      stompClient.subscribe('/topic/' + roomId, function (message) {
+        const receivedMessage = JSON.parse(message.body);
+        displayMessage('[방]', receivedMessage.sender, receivedMessage.content);
+      });
+
+      subscribedRooms.add(roomId);
+      alert(roomId + " 방에 입장했습니다.");
+    });
+
+    // 메시지 전송
+    document.getElementById('sendButton').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    function sendMessage() {
+      const content = document.getElementById('messageInput').value.trim();
+      const type = document.getElementById('typeSelect').value;
+      const roomId = document.getElementById('roomInput').value;
+      const receiver = document.getElementById('receiverInput').value;
+
+      if (!stompClient || !currentUser) {
+        alert("로그인 후 이용해주세요.");
+        return;
+      }
+
+      if (content !== '') {
+        const message = {
+          messageType: type,
+          roomId: roomId,
+          sender: currentUser,
+          receiver: receiver,
+          content: content
+        };
+
+        if (type === "ROOM") {
+          stompClient.send("/app/chat.sendRoomMessage", {}, JSON.stringify(message));
+        } else if (type === "DIRECT") {
+          displayMessage('[DM]', receiver, content);
+          stompClient.send("/app/chat.sendDirectMessage", {}, JSON.stringify(message));
+        }
+
+        document.getElementById('messageInput').value = '';
+      }
+    }
+
+    function displayMessage(prefix, sender, message) {
+      const messagesDiv = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.textContent = prefix + ' ' + sender + ": " + message;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // 페이지 종료 시 disconnect
+    window.addEventListener('beforeunload', function () {
+      if (stompClient) {
+        stompClient.disconnect();
+      }
+    });
+</script>
+
+</body>
+</html>

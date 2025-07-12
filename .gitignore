@@ -38,6 +38,7 @@ out/
 /.gradle
 /chatting-core/build
 /chatting-api/build
+/common/build
 
 # CMake (사용하지 않으면 제거 가능)
 cmake-build-*/
