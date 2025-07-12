@@ -3,8 +3,10 @@ package com.chatting.system.api.controller;
 import com.chatting.system.api.config.SecurityConfig;
 import com.chatting.system.api.dto.LoginRequest;
 import com.chatting.system.api.dto.SignupRequest;
-import com.chatting.system.api.dto.UserResponse;
+import com.chatting.system.api.dto.LoginResponse;
+import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.service.UserService;
+import com.common.JwtUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class})
 class UserControllerTest {
 
     @Autowired
@@ -28,6 +30,9 @@ class UserControllerTest {
 
     @MockBean
     UserService userService;
+
+    @MockBean
+    JwtUtil jwtUtil; // JwtUtil Mock 등록
 
     @Test
     @DisplayName("회원가입 성공")
@@ -37,7 +42,7 @@ class UserControllerTest {
 
         // when
         Mockito.when(userService.signup(anyString(), anyString()))
-                .thenReturn(new UserResponse(1L, "testuser", "token"));
+                .thenReturn(new SignupResponse(1L, "testuser"));
 
         // then
         mockMvc.perform(post("/api/signup")
@@ -67,7 +72,7 @@ class UserControllerTest {
         LoginRequest request = new LoginRequest("testuser", "password");
 
         Mockito.when(userService.login(anyString(), anyString()))
-                .thenReturn(new UserResponse(1L, "testuser", "token"));
+                .thenReturn(new LoginResponse(1L, "testuser", "token"));
 
         mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)

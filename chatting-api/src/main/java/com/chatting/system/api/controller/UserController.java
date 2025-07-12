@@ -2,7 +2,8 @@ package com.chatting.system.api.controller;
 
 import com.chatting.system.api.dto.LoginRequest;
 import com.chatting.system.api.dto.SignupRequest;
-import com.chatting.system.api.dto.UserResponse;
+import com.chatting.system.api.dto.LoginResponse;
+import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -19,16 +20,18 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/signup")
-    public UserResponse signup(@RequestBody SignupRequest request) {
-        log.info("request={}", request);
-        UserResponse signup = userService.signup(request.getUsername(), request.getPassword());
+    public SignupResponse signup(@RequestBody SignupRequest request) {
+        log.info("signup request={}", request);
+        SignupResponse signup = userService.signup(request.getUsername(), request.getPassword());
         return signup;
     }
 
     @PostMapping("/login")
-    public UserResponse login(@RequestBody LoginRequest request) {
-        UserResponse user = userService.login(request.getUsername(), request.getPassword());
-        return user;
+    public LoginResponse login(@RequestBody LoginRequest request) {
+        log.info("login request={}", request);
+        LoginResponse response = userService.login(request.getUsername(), request.getPassword());
+        log.info("login response={}", response);
+        return response;
     }
 
     @PostMapping("/logout")

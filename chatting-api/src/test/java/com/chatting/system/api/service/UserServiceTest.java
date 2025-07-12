@@ -1,7 +1,8 @@
 package com.chatting.system.api.service;
 
 
-import com.chatting.system.api.dto.UserResponse;
+import com.chatting.system.api.dto.LoginResponse;
+import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.entity.User;
 import com.chatting.system.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import util.JwtUtil;
+import com.common.JwtUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,12 +37,11 @@ class UserServiceTest {
     @Test
     void signupSuccess() {
         when(userRepository.findByUsername("testuser")).thenReturn(null);
-        when(jwtUtil.generateToken(any(), any())).thenReturn(anyString());
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class)))
                 .thenReturn(User.sign("testuser", "encodedPassword"));
 
-        UserResponse response = userService.signup("testuser", "password");
+        SignupResponse response = userService.signup("testuser", "password");
 
         assertThat(response.getUsername()).isEqualTo("testuser");
     }
@@ -63,7 +63,7 @@ class UserServiceTest {
         when(userRepository.findByUsername("testuser")).thenReturn(user);
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 
-        UserResponse response = userService.login("testuser", "password");
+        LoginResponse response = userService.login("testuser", "password");
 
         assertThat(response.getUsername()).isEqualTo("testuser");
     }
