@@ -5,7 +5,9 @@ plugins {
 dependencies {
     // 다른 공통 의존성들
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
 
 java {

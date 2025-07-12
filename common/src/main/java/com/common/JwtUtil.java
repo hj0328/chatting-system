@@ -1,10 +1,13 @@
-package util;
+package com.common;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.security.Key;
 import java.util.Date;
 
 @Component
@@ -22,15 +25,26 @@ public class JwtUtil {
                 .claim("userId", userId)     // 커스텀 필드 userId 추가
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .signWith(getSigningKey(),SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String validateAndExtractUsername(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey)
+    public JwtUserInfo validateTokenAndGetJwtUserInfo(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+
+        String username = claims.get("username", String.class);
+        Long userId = claims.get("userId", Long.class);
+        return JwtUserInfo.builder()
+                .userId(userId)
+                .username(username)
+                .build();
+    }
+
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 }
