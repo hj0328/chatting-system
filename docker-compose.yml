@@ -1,9 +1,22 @@
 services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/html:/usr/share/nginx/html
+    depends_on:
+      - chatting-api
+      - chatting-core
+    networks:
+      - chatting-network
+
   chatting-api:
     build:
       context: ./chatting-api
     ports:
-      - "8090:8090"   # 내부포트와 외부포트 모두 8090
+      - "8090"   # 내부 포트만 개방
     depends_on:
       - db
       - redis
@@ -15,9 +28,25 @@ services:
     build:
       context: ./chatting-core
     ports:
-      - "8091:8091"   # 내부포트와 외부포트 모두 8091
+      - "8091:8091"
     depends_on:
       - redis
+    environment:
+      - SERVER_NAME=chatting-core
+      - SERVER_PORT=8091
+    networks:
+      - chatting-network
+
+  chatting-core2:
+    build:
+      context: ./chatting-core
+    ports:
+      - "8092:8092"
+    depends_on:
+      - redis
+    environment:
+      - SERVER_NAME=chatting-core2
+      - SERVER_PORT=8092
     networks:
       - chatting-network
 
