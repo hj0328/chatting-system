@@ -14,7 +14,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // WebSocket 사용 시 CSRF 비활성화
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/ws-chat/**").permitAll() // WebSocket handshake 허용
+                        .requestMatchers("/ws-chat/**", "/health").permitAll() // WebSocket handshake 허용
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable()) // REST API라면 formLogin 비활성화

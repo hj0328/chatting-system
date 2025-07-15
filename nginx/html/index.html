@@ -99,6 +99,23 @@
     const loginSection = document.getElementById('loginSection');
     const chatSection = document.getElementById('chatSection');
 
+    function handleLoginSuccess(username, token) {
+        currentUser = username;
+        authToken = token;
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('currentUser', username);
+        showLoginSuccessUI();
+        connectStomp();
+    }
+    function showLoginSuccessUI() {
+        showSignupBtn.style.display = 'none';
+        showLoginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        signupSection.style.display = 'none';
+        loginSection.style.display = 'none';
+        chatSection.style.display = 'block';
+    }
+
     // 회원가입, 로그인 버튼 클릭 이벤트
     showSignupBtn.addEventListener('click', () => {
       signupSection.style.display = 'block';
@@ -159,18 +176,9 @@
       location.reload();
     });
 
-    function showLoginSuccessUI() {
-      showSignupBtn.style.display = 'none';
-      showLoginBtn.style.display = 'none';
-      logoutBtn.style.display = 'block';
-      signupSection.style.display = 'none';
-      loginSection.style.display = 'none';
-      chatSection.style.display = 'block';
-    }
-
     // stomp 연결
     function connectStomp() {
-      const socket = new SockJS('http://localhost:8091/ws-chat');
+      const socket = new SockJS('/ws-chat');
       stompClient = Stomp.over(socket);
 
       stompClient.connect(
@@ -259,12 +267,32 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
+    // 새로고침 시 로그인 상태 복원
+    window.onload = function () {
+        const token = localStorage.getItem('authToken');
+        const savedUsername = localStorage.getItem('currentUser');
+
+        if (token && savedUsername) {
+          handleLoginSuccess(savedUsername, token);
+        }
+    };
+
     // 페이지 종료 시 disconnect
     window.addEventListener('beforeunload', function () {
       if (stompClient) {
         stompClient.disconnect();
       }
     });
+
+  showSignupBtn.addEventListener('click', () => {
+    signupSection.style.display = 'block';
+    loginSection.style.display = 'none';
+  });
+
+  showLoginBtn.addEventListener('click', () => {
+    loginSection.style.display = 'block';
+    signupSection.style.display = 'none';
+  });
 </script>
 
 </body>

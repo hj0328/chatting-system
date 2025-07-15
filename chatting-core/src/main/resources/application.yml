@@ -1,5 +1,5 @@
 server:
-  port: 8091
+  port: ${SERVER_PORT:8091} # 환경변수 없으면 기본값 8091
 
 output:
   ansi:
