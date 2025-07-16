@@ -30,7 +30,6 @@ public class UserController {
     public LoginResponse login(@RequestBody LoginRequest request) {
         log.info("login request={}", request);
         LoginResponse response = userService.login(request.getUsername(), request.getPassword());
-        log.info("login response={}", response);
         return response;
     }
 
