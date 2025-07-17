@@ -12,6 +12,8 @@ dependencies {
 
     // Spring Messaging (StompHeaderAccessor, MessageBuilder 등)
     implementation("org.springframework:spring-messaging")
+
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
 }
 
 tasks.test {
