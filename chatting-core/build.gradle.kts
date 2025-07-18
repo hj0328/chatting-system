@@ -1,19 +1,18 @@
+plugins {
+    id("org.springframework.boot") version "3.4.0"
+    id("io.spring.dependency-management") version "1.1.4"
+}
+
 dependencies {
-    implementation(project(":common"))
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
-
-    // Spring Boot Starter Test (JUnit5, Mockito, AssertJ 포함)
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-    // Spring Security Test
-    testImplementation("org.springframework.security:spring-security-test")
-
-    // Spring Messaging (StompHeaderAccessor, MessageBuilder 등)
     implementation("org.springframework:spring-messaging")
+    implementation(project(":common"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.test {
