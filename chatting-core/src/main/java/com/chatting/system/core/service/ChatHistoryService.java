@@ -22,7 +22,7 @@ public class ChatHistoryService {
     private static final String ROOM_STREAM_PREFIX = "chat:stream:room:";
     private static final int MAX_UNREAD_COUNT = 50; // 최대 50개의 읽지 않은 메세지 조회
 
-    public List<ChatMessageDto> readRecentRoomMessages(String roomId, String lastSeenId) {
+    public List<ChatMessageDto> readRecentRoomMessages(String roomId) {
         String streamKey = ROOM_STREAM_PREFIX + roomId;
 
         // 가장 마지막 50개 메세지 조회

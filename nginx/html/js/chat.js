@@ -57,6 +57,29 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
 
   subscribedRooms.add(roomId);
   alert(roomId + " 방에 입장했습니다.");
+
+  // 이전 메시지 불러오기
+  fetch(`/api/chat/${roomId}/messages`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('메시지를 불러오는 데 실패했습니다.');
+      }
+      return response.json();
+    })
+    .then(messages => {
+      const container = document.getElementById('messagesRoom');
+      container.innerHTML = ''; // 이전 내용 초기화
+
+      messages.forEach(msg => {
+        displayMessage('[방]', msg.sender, msg.content);
+      });
+
+      // 맨 아래로 스크롤
+      container.scrollTop = container.scrollHeight;
+    })
+    .catch(error => {
+      console.error('이전 메시지 로딩 오류:', error);
+    });
 });
 
 // 방 메시지 전송
