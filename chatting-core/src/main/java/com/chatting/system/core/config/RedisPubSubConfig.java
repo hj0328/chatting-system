@@ -16,7 +16,6 @@ public class RedisPubSubConfig {
     private final ChatPubSubListener chatPubSubListener;
 
     @Bean
-    @Lazy
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory connectionFactory
     ) {
