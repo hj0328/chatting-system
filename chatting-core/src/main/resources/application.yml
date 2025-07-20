@@ -6,9 +6,10 @@ output:
     enabled: always
 
 spring:
-  redis:
-    host: redis
-    port: 6379
+  data:
+    redis:
+      host: redis
+      port: 6379
 
   config:
     import: classpath:common.yml
