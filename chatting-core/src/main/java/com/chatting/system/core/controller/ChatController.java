@@ -18,7 +18,6 @@ import java.util.Map;
 @Slf4j
 public class ChatController {
 
-    private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;
 
     @MessageMapping("/chat.sendRoomMessage")
@@ -40,11 +39,12 @@ public class ChatController {
         log.info("Direct Message:{} from user:{}", messageDto, principal.getName());
 
         if (messageDto.getMessageType() == MessageType.DIRECT) {
+            chatMessageService.sendDirect(messageDto);
             // receiver 기록
-            messagingTemplate.convertAndSend(
-                    "/user/" + messageDto.getReceiver() + "/queue/messages",
-                    messageDto
-            );
+//            messagingTemplate.convertAndSend(
+//                    "/user/" + messageDto.getReceiver() + "/queue/messages",
+//                    messageDto
+//            );
         }
 
         return messageDto;

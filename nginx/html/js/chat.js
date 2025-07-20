@@ -59,7 +59,12 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
   alert(roomId + " 방에 입장했습니다.");
 
   // 이전 메시지 불러오기
-  fetch(`/api/chat/${roomId}/messages`)
+  fetch(`/api/chat/room/${roomId}/messages`, {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + authToken
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error('메시지를 불러오는 데 실패했습니다.');

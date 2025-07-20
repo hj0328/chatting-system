@@ -15,6 +15,7 @@ public class ChatMessageService {
 
     private static final String ROOM_STREAM_PREFIX = "chat:stream:room:";
     private static final String ROOM_PUBSUB_PREFIX = "chat:pubsub:room:";
+    private static final String DIRECT_STREAM_PREFIX = "chat:stream:dm:";
 
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -32,5 +33,12 @@ public class ChatMessageService {
         redisTemplate.convertAndSend(pubsubChannel, chatMessage);
 
         log.info("Saved to Stream {} and published to {}. payload: {}", streamKey, pubsubChannel, chatMessage);
+    }
+
+    public void sendDirect(ChatMessageDto chatMessage) {
+        String receiver = chatMessage.getReceiver();
+
+        String streamKey = DIRECT_STREAM_PREFIX + receiver;
+        redisTemplate.opsForStream().add(streamKey, Map.of("payload", chatMessage));
     }
 }
