@@ -16,7 +16,7 @@ import java.util.List;
 public class ChatHistoryController {
     private final ChatHistoryService chatHistoryService;
 
-    @GetMapping("/{roomId}/messages")
+    @GetMapping("/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageDto>> getRecentRoomMessages(
             @PathVariable String roomId
     ) {
