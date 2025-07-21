@@ -1,70 +1,58 @@
-# 프로젝트명: 멀티스레드 채팅 프로그램
+# 프로젝트명: 채팅 시스템
 
 ## 프로젝트 개요  
-### 목표
-- Java로 클라이언트-서버 기반의 채팅 시스템을 구현
-- 실시간 메시지 송수신 및 귓속말, 접속자 목록 확인 등의 기능을 제공함으로써 네트워킹, 소켓 프로그래밍, 동시성 제어, 객체 직렬화를 학습 및 적용
-  
+- 순수 Java 기반의 소켓 프로그래밍을 경험한 이후, 보다 발전된 실시간 채팅 시스템을 직접 설계하고 구현해보고 싶어 시작한 프로젝트입니다. 
+- 채팅 서버와 API 서버를 분리하고, JWT 기반 인증을 통해 사용자 상태를 관리하여 Stateful 환경에서도 수평 확장이 가능하도록 구성했습니다.
+- 1:1 메시징, 단체 메시징, 채팅 히스토리 관리, 서버 확장성 등을 고려해 구조화했습니다.
+
+### 기술 스택  
+- **백엔드**: Java 17, Spring Boot 3.4, Spring Security, WebSocket (STOMP)
+- **인프라**: Redis (Stream, Pub/Sub), Docker, Nginx
+- **데이터베이스**: MySQL
+- **프론트엔드**: HTML, Vanilla JS
+
+### 시스템 아키텍처
+```
+사용자 ─────▶ Nginx ───▶ chatting-api (REST API 서버) ──▶ MySQL
+                 │
+                 └────▶ chatting-core (STOMP WebSocket 서버)
+                                    │
+                     Redis (Stream per room + Pub/Sub)
+```
+- Nginx
+  - 포트에 따라 API와 채팅 서버로 트래픽 분기
+  - core 서버는 least_conn 방식으로, 소켓 연결이 적은 서버에 분산 처리
+- chatting-api
+  - 사용자 인증/회원가입/메시지 히스토리 API 제공  
+- chatting-core
+  - STOMP 기반 WebSocket 채팅 처리  
+- Redis
+  - Stream: 채팅방별 또는 1대1 채팅에서 사용자별 수신용 메시지 기록
+  - Pub/Sub: 메시지 전파 및 실시간 수신 처리
 
 ### 주요 기능
-- 클라이언트와 서버 간 TCP 소켓을 이용한 양방향 통신
-- 멀티스레딩을 통한 동시 접속 처리
-- 메시지 타입에 따른 브로드캐스트, 귓속말(@username), WHOISIN, LOGOUT 명령 지원
-- 서버 로그를 통한 접속/해제 기록 관리 및 사용자 활동 모니터링
-- ExecutorService를 활용한 스레드 풀 도입으로 자원 관리 최적화 및 성능 개선
+- JWT 기반 로그인 및 인증
+- WebSocket(STOMP) 기반의 실시간 1:1 및 단체 채팅
+- Redis Stream을 활용한 채팅 기록 저장 및 복원 기능
+- Pub/Sub 구조로 효율적인 실시간 메시지 전달
+- Nginx 부하 분산 처리
 
-### 사용 기술
-- 언어: Java
-- 네트워킹: Socket 프로그래밍 (TCP/IP)
-- 동시성 처리: 멀티스레딩, ExecutorService, BlockingQueue, ConcurrentLinkedQueue
-- 빌드 도구: Maven
-- 테스트: JUnit 5
 
 ### 주요 성과 및 학습 내용  
-- 사용자마다 새 스레드를 생성하던 구조에서, **리소스 소모 문제를 해결하기 위해 ExecutorService 기반 스레드 풀을 도입하여 동시 처리 효율 향상**
-- 메시지 수신과 처리를 단일 흐름에서 처리하던 구조에서 병목이 발생해 흐름이 멈추는 문제를 방지하고자, **BlockingQueue를 활용한 생산자-소비자 구조로 분리하여 메시지 처리 안정성 개선**
-- 공유 리스트로 클라이언트 연결을 관리하던 중 동시 접근 충돌 위험이 있어, **ConcurrentLinkedQueue로 전환해 스레드 안전한 연결 관리와 브로드캐스트 지원**
+- 채팅 서버와 API 서버를 분리해 **확장성과 유지보수성을 고려한 아키텍처 설계**
+- JWT 인증을 통해 **WebSocket의 stateful 특성 보완**
+- Redis Stream vs Pub/Sub 방식의 차이 및 운영 특성 직접 비교 및 적용
+- Spring Boot 기반 **멀티 모듈 구성**, Docker/Nginx를 통한 환경 구축 경험
 
-
-## 실행
-1. 2개 이상의 terminal 실행
-2. java -jar chatting_program-1.0-SNAPSHOT.jar
-3. Server 또는 Client 선택
-- Server 측 예제
-  - Server가 먼저 실행되어 listen 상태 유지
-```dtd
-> Enter Server or Client
-Server
-> Enter Port Number (default: 7000):
-
-20:03:09 Server waiting for Clients on port 7000.
+### 실행 방법
 
 ```
+# 1. 빌드
+./gradlew build
 
-- Client 측 예제
-  - username (default anonymous)
-  - server port number (default localhost)
-  - server ip address (default 7000)
-
-```dtd
-> Enter Server or Client
-Client
-> Enter the username (default: Anonymous):
-tester
-> Enter Server Port Number (default: 7000):
-
-> Enter the Server Address (default: localhost):
-
-Connection accepted localhost/127.0.0.1:7000
-
-Welcome to the chatroom.Instructions:
-1. 활성화된 모든 클라이언트에게 브로드캐스트 메시지를 보내려면, 메시지를 입력하세요.
-2. 원하는 클라이언트에게 귓속말를 보내려면 @username 메시지 형식으로 입력하세요.
-3. 활성화된 클라이언트 목록을 보려면 따옴표 없이 WHOISIN을 입력하세요.
-4. LOGOUT을 입력하면 서버에서 로그아웃됩니다.
-
-
-> id: 0
-> 20:05:44 tester  *** tester has joined the chat room. ***
->
+# 2. Docker Compose 실행
+docker-compose up --build
 ```
+- 기본 접속 주소: http://localhost
+- WebSocket endpoint: /ws-chat
+- 2명 이상 테스트하려면 다른 브라우저 또는 시크릿 창에서 접속
