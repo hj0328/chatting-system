@@ -1,0 +1,3 @@
+jwt:
+  secret: abcdefghijklmnopqrstuvwxyz123456 # 개발 테스트용
+  expiration: 1800000 # 30분 (ms 단위)
