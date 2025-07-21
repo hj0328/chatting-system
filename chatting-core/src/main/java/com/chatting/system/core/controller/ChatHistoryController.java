@@ -24,4 +24,13 @@ public class ChatHistoryController {
         List<ChatMessageDto> messages = chatHistoryService.readRecentRoomMessages(roomId);
         return ResponseEntity.ok(messages);
     }
+
+    @GetMapping("/dm/{roomId}/messages")
+    public ResponseEntity<List<ChatMessageDto>> getRecentDirectMessages(
+            @PathVariable String roomId
+    ) {
+        log.info("GET Direct {}'s message history", roomId);
+        List<ChatMessageDto> messages = chatHistoryService.readRecentDirectMessages(roomId);
+        return ResponseEntity.ok(messages);
+    }
 }
