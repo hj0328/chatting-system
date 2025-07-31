@@ -36,6 +36,10 @@ public class ChatController {
 
     @MessageMapping("/chat.sendDirectMessage")
     public ChatMessageDto sendDirectMessage(ChatMessageDto messageDto, Principal principal) {
+        if (principal == null) {
+            throw new IllegalStateException("Unauthenticated user tried to send message.");
+        }
+
         log.info("Direct Message:{} from user:{}", messageDto, principal.getName());
 
         if (messageDto.getMessageType() == MessageType.DIRECT) {
