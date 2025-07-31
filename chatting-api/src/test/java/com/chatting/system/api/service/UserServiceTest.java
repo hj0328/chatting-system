@@ -59,7 +59,6 @@ class UserServiceTest {
     void loginSuccess() {
         User user = User.sign("testuser", "encodedPassword");
 
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
         when(userRepository.findByUsername("testuser")).thenReturn(user);
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 

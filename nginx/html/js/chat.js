@@ -1,6 +1,5 @@
 let stompClient = null;
 let currentUser = null;
-let authToken = null;
 let subscribedRooms = new Set();
 
 const logoutBtn = document.getElementById('logoutBtn');
@@ -16,11 +15,14 @@ logoutBtn.addEventListener('click', async () => {
 
 // stomp 연결
 function connectStomp() {
+  const ok = await refreshAccessToken(currentUser.userId);
+  if (!ok) return;
+
   const socket = new SockJS('/ws-chat');
   stompClient = Stomp.over(socket);
 
   stompClient.connect(
-    { Authorization: 'Bearer ' + authToken }, // connect headers에 token 추가
+    {},
     function (frame) {
       console.log('Connected: ' + frame);
 
@@ -60,10 +62,7 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
 
   // 이전 메시지 불러오기
   fetch(`/api/chat/room/${roomId}/messages`, {
-    method: 'GET',
-    headers: {
-      'Authorization': 'Bearer ' + authToken
-    }
+    method: 'GET'
   })
     .then(response => {
       if (!response.ok) {
@@ -142,11 +141,9 @@ function displayMessage(prefix, sender, content) {
 
 // 새로고침 시 로그인 상태 복원
 window.onload = function () {
-    const token = localStorage.getItem("accessToken");
     const username = localStorage.getItem("currentUser");
 
-    if (token && username) {
-        authToken = token;
+    if (username) {
         currentUser = username;
         connectStomp();
     } else {
@@ -161,3 +158,40 @@ window.addEventListener('beforeunload', function () {
     stompClient.disconnect();
   }
 });
+
+async function fetchWithRefresh(url, options = {}) {
+  let response = await fetch(url, options);
+
+  if (response.status === 401) {
+    console.warn("Access token 만료. refresh 시도");
+    const ok = await refreshAccessToken(currentUser.userId); // userId 필요
+    if (ok) {
+      // 새 access token은 쿠키에 세팅됨
+      response = await fetch(url, options); // 재시도
+    }
+  }
+  return response;
+}
+
+async function refreshAccessToken(userId) {
+  try {
+    const response = await fetch(`/auth/refresh`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userId)
+    });
+
+    if (!response.ok) {
+      throw new Error("리프레시 토큰 만료 또는 위조됨");
+    }
+
+    const data = await response.json();
+    console.log("새 accessToken 발급 완료", data.message);
+    return true;
+  } catch (err) {
+    console.error("refresh token 실패", err);
+    alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
+    window.location.href = "/index.html";
+    return false;
+  }
+}
