@@ -1,9 +1,8 @@
 package com.chatting.system.api.controller;
 
 import com.chatting.system.api.config.SecurityConfig;
-import com.chatting.system.api.dto.LoginRequest;
-import com.chatting.system.api.dto.SignupRequest;
 import com.chatting.system.api.dto.LoginResponse;
+import com.chatting.system.api.dto.SignupRequest;
 import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.service.UserService;
 import com.common.JwtUtil;
@@ -14,10 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,7 +34,13 @@ class UserControllerTest {
     UserService userService;
 
     @MockBean
-    JwtUtil jwtUtil; // JwtUtil Mock 등록
+    RedisTemplate<String, String> redisTemplate;
+
+    @MockBean
+    RedisConnectionFactory redisConnectionFactory;
+
+    @MockBean
+    JwtUtil jwtUtil;
 
     @Test
     @DisplayName("회원가입 성공")
@@ -41,7 +49,7 @@ class UserControllerTest {
         SignupRequest request = new SignupRequest("testuser", "password");
 
         // when
-        Mockito.when(userService.signup(anyString(), anyString()))
+        Mockito.when(userService.signup("testuser", "password"))
                 .thenReturn(new SignupResponse(1L, "testuser"));
 
         // then
@@ -69,10 +77,21 @@ class UserControllerTest {
     @Test
     @DisplayName("로그인 성공")
     void loginSuccess() throws Exception {
-        LoginRequest request = new LoginRequest("testuser", "password");
+//        LoginRequest request = new LoginRequest("testuser", "password");
 
-        Mockito.when(userService.login(anyString(), anyString()))
-                .thenReturn(new LoginResponse(1L, "testuser", "token"));
+        // login stub
+        Mockito.when(userService.login("testuser", "password"))
+                .thenReturn(new LoginResponse(1L, "testuser"));
+
+        // jwt stub
+        Mockito.when(jwtUtil.generateToken("testuser", 1L))
+                .thenReturn("access-token");
+
+        Mockito.when(jwtUtil.createRefreshToken("testuser"))
+                .thenReturn("refresh-token");
+
+        Mockito.doNothing().when(userService)
+                .addRefreshTokenToRedis(1L, eq("testuser"), eq("refresh-token"));
 
         mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)

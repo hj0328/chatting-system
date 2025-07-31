@@ -8,9 +8,8 @@ import lombok.Getter;
 public class LoginResponse {
     private Long id;
     private String username;
-    private String token;
 
-    public static LoginResponse toUserResponse(Long id, String username, String token) {
-        return new LoginResponse(id, username, token);
+    public static LoginResponse toUserResponse(Long id, String username) {
+        return new LoginResponse(id, username);
     }
 }

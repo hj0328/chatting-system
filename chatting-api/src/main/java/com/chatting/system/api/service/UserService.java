@@ -4,18 +4,22 @@ import com.chatting.system.api.dto.LoginResponse;
 import com.chatting.system.api.dto.SignupResponse;
 import com.chatting.system.api.entity.User;
 import com.chatting.system.api.repository.UserRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.common.JwtUtil;
+
+import java.time.Duration;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
     public SignupResponse signup(String username, String password) {
@@ -33,10 +37,14 @@ public class UserService {
         User user = userRepository.findByUsername(username);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
 
-            String token = jwtUtil.generateToken(user.getUsername(), user.getId());
-            return LoginResponse.toUserResponse(user.getId(), user.getUsername(), token);
+            return LoginResponse.toUserResponse(user.getId(), user.getUsername());
         }
 
         throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
+    }
+
+    public void addRefreshTokenToRedis(Long id, String username, String refreshToken) {
+        redisTemplate.opsForValue()
+                .set("refresh:" + id + ":" +  username, refreshToken, Duration.ofDays(14));
     }
 }
