@@ -1,21 +1,24 @@
 package com.chatting.system.core.subscriber;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.AbstractSubProtocolEvent;
-import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+
+import java.security.Principal;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketEventListener {
 
     private final StreamListenerManager listenerManager;
 
     @EventListener
-    public void handleConnet(SessionConnectEvent event) {
+    public void handleConnect(SessionConnectedEvent event) {
         String userId = getUserIdFromEvent(event);
         listenerManager.startListening(userId);
     }
@@ -27,7 +30,15 @@ public class WebSocketEventListener {
     }
 
     private String getUserIdFromEvent(AbstractSubProtocolEvent event) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        return accessor.getUser().getName();
+        Principal user = event.getUser();
+        log.info("EventListener user principal:{}", user);
+
+        if (user != null) {
+            listenerManager.startListening(user.getName());
+        } else {
+            log.warn("user is null in SessionConnectedEvent");
+        }
+
+        return user.getName();
     }
 }

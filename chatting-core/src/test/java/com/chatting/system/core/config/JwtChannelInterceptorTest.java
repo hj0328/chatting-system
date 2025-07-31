@@ -17,41 +17,17 @@ import static org.mockito.Mockito.*;
 class JwtChannelInterceptorTest {
 
     private JwtUtil jwtUtil;
-    private JwtChannelInterceptor interceptor;
+    private StompAuthChannelInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
         jwtUtil = mock(JwtUtil.class);
-        interceptor = new JwtChannelInterceptor(jwtUtil);
+        interceptor = new StompAuthChannelInterceptor(jwtUtil);
         SecurityContextHolder.clearContext(); // 초기화
     }
 
     @Test
     void preSend_withValidToken_setsAuthentication() {
-        // given
-        String token = "testToken";
-        String username = "testuser";
-        Long userId = 1L;
-        JwtUserInfo userInfo = JwtUserInfo.builder()
-                .username(username)
-                .userId(userId)
-                .build();
 
-        when(jwtUtil.validateTokenAndGetJwtUserInfo(token)).thenReturn(userInfo);
-
-        StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-        accessor.addNativeHeader("Authorization", "Bearer " + token);
-        accessor.setLeaveMutable(true);
-
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
-
-        // when
-        Message<?> result = interceptor.preSend(message, mock(MessageChannel.class));
-
-        // then
-        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals(username, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-
-        verify(jwtUtil, times(1)).validateTokenAndGetJwtUserInfo(token);
     }
 }

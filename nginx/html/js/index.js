@@ -10,12 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch("/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include", // 쿠키 받기
             body: JSON.stringify({ username, password }),
         });
 
         if (res.ok) {
             const data = await res.json();
-            localStorage.setItem("accessToken", data.token);
             localStorage.setItem("currentUser", username);
             window.location.href = "/chat.html";
         } else {
