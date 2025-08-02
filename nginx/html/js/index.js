@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (res.ok) {
             const data = await res.json();
-            localStorage.setItem("currentUser", JSON.stringify(data)));
+            localStorage.setItem("currentUser", JSON.stringify(data));
             window.location.href = "/chat.html";
         } else {
             alert("로그인 실패");
