@@ -7,18 +7,18 @@ const chatSection = document.getElementById('chatSection');
 
 // 로그아웃
 logoutBtn.addEventListener('click', async () => {
-  const response = await fetch('/api/logout', { method: 'POST' });
+  const response = await fetch('https://localhost/api/logout', { method: 'POST' });
   const text = await response.text();
   alert(text);
   location.reload();
 });
 
 // stomp 연결
-function connectStomp() {
+async function connectStomp() {
   const ok = await refreshAccessToken(currentUser.userId);
   if (!ok) return;
 
-  const socket = new SockJS('/ws-chat');
+  const socket = new SockJS('https://localhost/ws-chat');
   stompClient = Stomp.over(socket);
 
   stompClient.connect(
@@ -26,7 +26,7 @@ function connectStomp() {
     function (frame) {
       console.log('Connected: ' + frame);
 
-      stompClient.subscribe('/user/' + currentUser + '/queue/messages', function (message) {
+      stompClient.subscribe('/user/' + currentUser.username + '/queue/messages', function (message) {
         const receivedMessage = JSON.parse(message.body);
         displayMessage('[DM]', receivedMessage.sender, receivedMessage.content);
       });
@@ -61,7 +61,7 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
   alert(roomId + " 방에 입장했습니다.");
 
   // 이전 메시지 불러오기
-  fetch(`/api/chat/room/${roomId}/messages`, {
+  fetch(`https://localhost/api/chat/room/${roomId}/messages`, {
     method: 'GET'
   })
     .then(response => {
@@ -99,7 +99,7 @@ document.getElementById('sendRoomBtn').addEventListener('click', () => {
   const message = {
     messageType: "ROOM",
     roomId: roomId,
-    sender: currentUser,
+    sender: currentUser.username,
     content: content
   };
 
@@ -119,7 +119,7 @@ document.getElementById('sendDmBtn').addEventListener('click', () => {
 
   const message = {
     messageType: "DIRECT",
-    sender: currentUser,
+    sender: currentUser.username,
     receiver: receiver,
     content: content
   };
@@ -141,10 +141,10 @@ function displayMessage(prefix, sender, content) {
 
 // 새로고침 시 로그인 상태 복원
 window.onload = function () {
-    const username = localStorage.getItem("currentUser");
+    const saved = localStorage.getItem("currentUser");
 
-    if (username) {
-        currentUser = username;
+    if (saved) {
+        currentUser = JSON.parse(saved);           // { userId, username }
         connectStomp();
     } else {
         alert("로그인이 필요합니다.");
@@ -164,9 +164,8 @@ async function fetchWithRefresh(url, options = {}) {
 
   if (response.status === 401) {
     console.warn("Access token 만료. refresh 시도");
-    const ok = await refreshAccessToken(currentUser.userId); // userId 필요
+    const ok = await refreshAccessToken(currentUser.userId);
     if (ok) {
-      // 새 access token은 쿠키에 세팅됨
       response = await fetch(url, options); // 재시도
     }
   }
@@ -175,10 +174,10 @@ async function fetchWithRefresh(url, options = {}) {
 
 async function refreshAccessToken(userId) {
   try {
-    const response = await fetch(`/auth/refresh`, {
-      method: 'GET',
+    const response = await fetch('https://localhost/auth/refresh', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userId)
+      body: JSON.stringify({ userId })
     });
 
     if (!response.ok) {
