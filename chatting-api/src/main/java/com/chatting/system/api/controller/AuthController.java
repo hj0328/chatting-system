@@ -1,5 +1,6 @@
 package com.chatting.system.api.controller;
 
+import com.chatting.system.api.dto.RefreshRequest;
 import com.common.JwtUserInfo;
 import com.common.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -29,20 +30,20 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody long userId,
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshRequest userRequest,
                                           HttpServletRequest request) {
-        log.info("GET /auth/refresh, userId={}", userId);
+        log.info("GET /auth/refresh, userId={}", userRequest);
         String refreshToken = extractCookie(request, "refreshToken");
 
-        if (refreshToken == null || !jwtUtil.isTokenValid(refreshToken)) {
+        if (refreshToken == null || !jwtUtil.isTokenValid(refreshToken, false)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("리프레시 토큰 만료 또는 없음");
         }
 
-        JwtUserInfo userInfo = jwtUtil.getJwtUserInfo(refreshToken);
+        JwtUserInfo userInfo = jwtUtil.getJwtUserInfo(refreshToken, false);
 
         String savedToken = redisTemplate.opsForValue().get("refresh:" + userInfo.getUserId() + ":"+ userInfo.getUsername());
 
-        if (!refreshToken.equals(savedToken) || !userInfo.getUserId().equals(userId)) {
+        if (!refreshToken.equals(savedToken) || !userInfo.getUserId().equals(userRequest.userId())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("위조된 리프레시 토큰");
         }
 
