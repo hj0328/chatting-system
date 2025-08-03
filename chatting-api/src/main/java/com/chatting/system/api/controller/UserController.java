@@ -38,20 +38,24 @@ public class UserController {
 
         log.info("login request={}", request);
         LoginResponse loginResponse = userService.login(request.getUsername(), request.getPassword());
-        String token = jwtUtil.generateToken(loginResponse.getUsername(), loginResponse.getId());
-        String refreshToken = jwtUtil.createRefreshToken(request.getUsername());
+        String token = jwtUtil.generateToken(loginResponse.getUsername(), loginResponse.getUserId());
+        String refreshToken = jwtUtil.createRefreshToken(loginResponse.getUsername(), loginResponse.getUserId());
 
-        userService.addRefreshTokenToRedis(loginResponse.getId(), loginResponse.getUsername(), refreshToken);
+        userService.addRefreshTokenToRedis(loginResponse.getUserId(), loginResponse.getUsername(), refreshToken);
 
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", token)
                 .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ofMinutes(15)) // 브라우저 기준 토큰 만료 설정
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .path("/")
+                .secure(true)
+                .sameSite("Lax")
+                .path("/auth/refresh")
                 .maxAge(Duration.ofDays(14))
                 .build();
 

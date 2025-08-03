@@ -3,3 +3,4 @@ jwt:
   expiration: 900000 # 15분 (ms 단위)
   refresh:
     expiration: 604800000 # 일주일
+    secret: abcdefghijklmnopqrstuvwxyz12345678

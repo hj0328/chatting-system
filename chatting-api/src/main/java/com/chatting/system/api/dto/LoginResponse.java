@@ -6,10 +6,10 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class LoginResponse {
-    private Long id;
+    private Long userId;
     private String username;
 
-    public static LoginResponse toUserResponse(Long id, String username) {
-        return new LoginResponse(id, username);
+    public static LoginResponse toUserResponse(Long userId, String username) {
+        return new LoginResponse(userId, username);
     }
 }

@@ -177,6 +177,7 @@ async function refreshAccessToken(userId) {
     const response = await fetch('https://localhost/auth/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ userId })
     });
 
