@@ -7,7 +7,8 @@ const chatSection = document.getElementById('chatSection');
 
 // 로그아웃
 logoutBtn.addEventListener('click', async () => {
-  const response = await fetch('https://localhost/api/logout', { method: 'POST' });
+  const response = await fetchWithRefresh('https://localhost/api/logout', {
+     method: 'POST',
   const text = await response.text();
   alert(text);
   location.reload();
@@ -15,8 +16,6 @@ logoutBtn.addEventListener('click', async () => {
 
 // stomp 연결
 async function connectStomp() {
-  const ok = await refreshAccessToken(currentUser.userId);
-  if (!ok) return;
 
   const socket = new SockJS('https://localhost/ws-chat');
   stompClient = Stomp.over(socket);
@@ -61,7 +60,7 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
   alert(roomId + " 방에 입장했습니다.");
 
   // 이전 메시지 불러오기
-  fetch(`https://localhost/api/chat/room/${roomId}/messages`, {
+  fetchWithRefresh(`https://localhost/api/chat/room/${roomId}/messages`, {
     method: 'GET'
   })
     .then(response => {
@@ -139,8 +138,8 @@ function displayMessage(prefix, sender, content) {
   targetDiv.scrollTop = targetDiv.scrollHeight;
 }
 
-// 새로고침 시 로그인 상태 복원
-window.onload = function () {
+// 로그인 및 새로고침 시 로그인 상태 복원
+window.onload = async function () {
     const saved = localStorage.getItem("currentUser");
 
     if (saved) {
@@ -174,9 +173,15 @@ async function fetchWithRefresh(url, options = {}) {
 
 async function refreshAccessToken(userId) {
   try {
+    const accessToken = localStorage.getItem("accessToken");
+    console.log('accessToken 확인:', accessToken);
+
     const response = await fetch('https://localhost/auth/refresh', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+       },
       credentials: 'include',
       body: JSON.stringify({ userId })
     });
@@ -189,7 +194,6 @@ async function refreshAccessToken(userId) {
     console.log("새 accessToken 발급 완료", data.message);
     return true;
   } catch (err) {
-    console.error("refresh token 실패", err);
     alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
     window.location.href = "/index.html";
     return false;

@@ -36,6 +36,7 @@ public class AuthController {
         String refreshToken = extractCookie(request, "refreshToken");
 
         if (refreshToken == null || !jwtUtil.isTokenValid(refreshToken, false)) {
+            log.info("리프레시 토큰 만료 또는 없음");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("리프레시 토큰 만료 또는 없음");
         }
 
@@ -44,6 +45,7 @@ public class AuthController {
         String savedToken = redisTemplate.opsForValue().get("refresh:" + userInfo.getUserId() + ":"+ userInfo.getUsername());
 
         if (!refreshToken.equals(savedToken) || !userInfo.getUserId().equals(userRequest.userId())) {
+            log.info("위조된 토큰");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("위조된 리프레시 토큰");
         }
 
@@ -51,7 +53,7 @@ public class AuthController {
         ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ofMinutes(15))
                 .build();

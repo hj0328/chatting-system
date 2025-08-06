@@ -12,12 +12,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch(`${baseURL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include", // 쿠키 포함 (refreshToken 등)
             body: JSON.stringify({ username, password }),
         });
 
         if (res.ok) {
             const data = await res.json();
+            localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("currentUser", JSON.stringify(data));
             window.location.href = "/chat.html";
         } else {
@@ -37,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem("accessToken", data.accessToken);
             alert("회원가입 성공! 로그인해주세요.");
         } else {
             alert("회원가입 실패");
