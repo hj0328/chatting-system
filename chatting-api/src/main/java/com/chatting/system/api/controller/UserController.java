@@ -38,31 +38,48 @@ public class UserController {
 
         log.info("login request={}", request);
         LoginResponse loginResponse = userService.login(request.getUsername(), request.getPassword());
-        String token = jwtUtil.generateToken(loginResponse.getUsername(), loginResponse.getId());
-        String refreshToken = jwtUtil.createRefreshToken(request.getUsername());
+        String accessToken = jwtUtil.generateToken(loginResponse.getUsername(), loginResponse.getUserId());
+        loginResponse.addAccessToken(accessToken);
 
-        userService.addRefreshTokenToRedis(loginResponse.getId(), loginResponse.getUsername(), refreshToken);
+        String refreshToken = jwtUtil.createRefreshToken(loginResponse.getUsername(), loginResponse.getUserId());
 
-        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", token)
-                .httpOnly(true)
-                .path("/")
-                .maxAge(Duration.ofMinutes(15)) // 브라우저 기준 토큰 만료 설정
-                .build();
+        userService.addRefreshTokenToRedis(loginResponse.getUserId(), loginResponse.getUsername(), refreshToken);
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
                 .path("/")
                 .maxAge(Duration.ofDays(14))
                 .build();
 
+        log.info("login response: {}", loginResponse);
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(loginResponse);
     }
 
     @PostMapping("/logout")
-    public void logout(HttpSession session) {
-        session.invalidate();
+    public ResponseEntity<String> logout(HttpSession session) {
+        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
+                .path("/")
+                .maxAge(0)
+                .secure(true)
+                .httpOnly(true)
+                .sameSite("Strict")
+                .build();
+
+        ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
+                .path("/")
+                .maxAge(0)
+                .secure(true)
+                .httpOnly(true)
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, expiredAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, expiredRefresh.toString())
+                .body("로그아웃 완료");
     }
 }

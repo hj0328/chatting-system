@@ -19,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -87,17 +86,14 @@ class UserControllerTest {
         Mockito.when(jwtUtil.generateToken("testuser", 1L))
                 .thenReturn("access-token");
 
-        Mockito.when(jwtUtil.createRefreshToken("testuser"))
+        Mockito.when(jwtUtil.createRefreshToken("testuser", 1L))
                 .thenReturn("refresh-token");
-
-        Mockito.doNothing().when(userService)
-                .addRefreshTokenToRedis(1L, eq("testuser"), eq("refresh-token"));
 
         mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"testuser\",\"password\":\"password\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.username").value("testuser"));
     }
 

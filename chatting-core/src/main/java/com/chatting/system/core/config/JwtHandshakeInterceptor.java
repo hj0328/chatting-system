@@ -38,8 +38,8 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                 }
             }
 
-            if (accessToken != null && jwtUtil.isTokenValid(accessToken)) {
-                JwtUserInfo userInfo = jwtUtil.getJwtUserInfo(accessToken);
+            if (accessToken != null && jwtUtil.isTokenValid(accessToken, true)) {
+                JwtUserInfo userInfo = jwtUtil.getJwtUserInfo(accessToken, true);
                 log.info("username:{}, userId:{}", userInfo.getUsername(), userInfo.getUserId());
                 attributes.put("user", new StompPrincipal(userInfo.getUsername()));
                 return true;

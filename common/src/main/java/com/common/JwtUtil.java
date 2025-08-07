@@ -1,6 +1,7 @@
 package com.common;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -15,6 +16,9 @@ public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
+
+    @Value("${jwt.refresh.secret}")
+    private String REFRESH_SECRET_KEY;
 
     @Value("${jwt.expiration}")
     private long TOKEN_EXP;
@@ -32,12 +36,21 @@ public class JwtUtil {
                 .compact();
     }
 
-    public JwtUserInfo getJwtUserInfo(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public JwtUserInfo getJwtUserInfo(String token, boolean isAccessToken) {
+        Claims claims = null;
+        if (isAccessToken) {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } else {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(getRefreshSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        }
 
         String username = claims.get("username", String.class);
         Long userId = claims.get("userId", Long.class);
@@ -51,19 +64,34 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String createRefreshToken(String username) {
+    private Key getRefreshSigningKey() {
+        return Keys.hmacShaKeyFor(REFRESH_SECRET_KEY.getBytes());
+    }
+
+    public String createRefreshToken(String username, Long userId) {
         return Jwts.builder()
-                .setSubject(username)
+                .claim("username", username)
+                .claim("userId", userId)
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_EXP))
-                .signWith(getSigningKey(),SignatureAlgorithm.HS256)
+                .signWith(getRefreshSigningKey(),SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token) {
+    public boolean isTokenValid(String token, boolean isAccessToken) {
         try {
-            Jwts.parser().setSigningKey(getSigningKey()).parseClaimsJws(token);
+            if (isAccessToken) {
+                Jwts.parserBuilder()
+                        .setSigningKey(getSigningKey())
+                        .build()
+                        .parseClaimsJws(token);
+            } else {
+                Jwts.parserBuilder()
+                        .setSigningKey(getRefreshSigningKey())
+                        .build()
+                        .parseClaimsJws(token);
+            }
             return true;
-        } catch (Exception e) {
+        } catch (JwtException e) {
             return false;
         }
     }
