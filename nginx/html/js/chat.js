@@ -7,15 +7,54 @@ const chatSection = document.getElementById('chatSection');
 
 // 로그아웃
 logoutBtn.addEventListener('click', async () => {
-  const response = await fetchWithRefresh('https://localhost/api/logout', {
-     method: 'POST',
-  const text = await response.text();
-  alert(text);
-  location.reload();
+  try {
+    const response = await fetchWithRefresh('https://localhost/api/logout', {
+      method: 'POST',
+      credentials: 'include', // 쿠키(refreshToken 등) 전송 필요 시
+    });
+
+    const text = await response.text();
+    alert(text);
+    location.reload(); // 페이지 새로고침 (로그아웃 후 초기화)
+  } catch (err) {
+    console.error('로그아웃 실패:', err);
+    alert('로그아웃 중 오류가 발생했습니다.');
+  }
 });
 
+async function getAccessToken() {
+    currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const userId = currentUser.userId;
+    const res = await fetch('https://localhost/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+       },
+      credentials: 'include',
+      body: JSON.stringify({ userId })
+    });
+
+    if (res.ok) {
+      const authHeader = res.headers.get("Authorization");
+      const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+      if (accessToken) {
+        console.log("accessToken 발급 완료:", accessToken);
+        connectStomp(accessToken);
+      } else {
+          alert("accessToken이 응답에 없음");
+      }
+    } else {
+        alert("다시 로그인 해주세요.");
+        location.href = "/";
+    }
+}
+
 // stomp 연결
-async function connectStomp() {
+async function connectStomp(accessToken) {
+
+document.cookie = `accessToken=${accessToken}; path=/;`;
+
 
   const socket = new SockJS('https://localhost/ws-chat');
   stompClient = Stomp.over(socket);
@@ -140,15 +179,7 @@ function displayMessage(prefix, sender, content) {
 
 // 로그인 및 새로고침 시 로그인 상태 복원
 window.onload = async function () {
-    const saved = localStorage.getItem("currentUser");
-
-    if (saved) {
-        currentUser = JSON.parse(saved);           // { userId, username }
-        connectStomp();
-    } else {
-        alert("로그인이 필요합니다.");
-        window.location.href = "/index.html";
-    }
+    getAccessToken();
 };
 
 // 페이지 종료 시 disconnect
@@ -173,13 +204,10 @@ async function fetchWithRefresh(url, options = {}) {
 
 async function refreshAccessToken(userId) {
   try {
-    const accessToken = localStorage.getItem("accessToken");
-    console.log('accessToken 확인:', accessToken);
 
     const response = await fetch('https://localhost/auth/refresh', {
       method: 'POST',
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
        },
       credentials: 'include',
@@ -195,7 +223,7 @@ async function refreshAccessToken(userId) {
     return true;
   } catch (err) {
     alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
-    window.location.href = "/index.html";
+    window.location.href = "/";
     return false;
   }
 }

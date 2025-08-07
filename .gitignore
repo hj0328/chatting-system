@@ -18,6 +18,8 @@ Temporary Items
 .apdisk
 *.icloud
 
+bin/
+
 ### IntelliJ IDEA ###
 .idea/
 *.iml

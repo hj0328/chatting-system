@@ -1,5 +1,6 @@
 package com.chatting.system.core.config;
 
+import com.common.JwtUserInfo;
 import com.common.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,16 +26,23 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            log.info("Connect Interceptor");
-            Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
 
-            Principal user = (Principal) sessionAttributes.get("user");
-            log.info("Connect Interceptor username:{}", user.getName());
-            if (user == null) {
-                throw new IllegalArgumentException("WebSocket 인증 실패: 세션에 userId 없음");
+            String tokenHeader = accessor.getFirstNativeHeader("Authorization");
+
+            if (tokenHeader != null && tokenHeader.startsWith("Bearer ")) {
+                String token = tokenHeader.substring(7);
+
+                if (jwtUtil.isTokenValid(token, true)) {
+                    JwtUserInfo userInfo = jwtUtil.getJwtUserInfo(token, true);
+                    log.info("Channel Interceptor usernfo={}", userInfo);
+                    accessor.setUser(new StompPrincipal(userInfo.getUsername())); // WebSocket 세션에 Principal 등록
+                } else {
+                    throw new IllegalArgumentException("Invalid accessToken");
+                }
             }
 
-             accessor.setUser(user);
+
+            log.info("Connect Interceptor");
         }
 
         return message;

@@ -32,7 +32,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshRequest userRequest,
                                           HttpServletRequest request) {
-        log.info("GET /auth/refresh, userId={}", userRequest);
+        log.info("POST /auth/refresh, userId={}", userRequest);
         String refreshToken = extractCookie(request, "refreshToken");
 
         if (refreshToken == null || !jwtUtil.isTokenValid(refreshToken, false)) {
@@ -50,16 +50,9 @@ public class AuthController {
         }
 
         String newAccessToken = jwtUtil.generateToken(userInfo.getUsername(), userInfo.getUserId());
-        ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(Duration.ofMinutes(15))
-                .build();
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + newAccessToken)
                 .body(Map.of("message", "accessToken 재발급 완료"));
     }
 
