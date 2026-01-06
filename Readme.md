@@ -53,6 +53,5 @@
 # 2. Docker Compose 실행
 docker-compose up --build
 ```
-- 기본 접속 주소: http://localhost
 - WebSocket endpoint: /ws-chat
 - 2명 이상 테스트하려면 다른 브라우저 또는 시크릿 창에서 접속
